@@ -18,7 +18,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      initialRoute: '/event_list', // Defina uma rota inicial diferente de '/'
+      initialRoute: '/event_list',
       routes: {
         '/event_list': (context) => EventListScreen(events, _addEvent),
         '/add_event': (context) => AddEventScreen(_addEvent),
@@ -37,12 +37,11 @@ class _MyAppState extends State<MyApp> {
                   backgroundImage: NetworkImage("url_da_sua_foto"),
                 ),
               ),
-              Divider(), // Uma linha divisória
+              Divider(), 
               ListTile(
                 leading: Icon(Icons.settings),
                 title: Text('Configurações'),
                 onTap: () {
-                  // Adicione ação para a tela de configurações aqui
                 },
               ),
             ],

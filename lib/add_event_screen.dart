@@ -1,5 +1,3 @@
-// add_event_screen.dart
-
 import 'package:flutter/material.dart';
 import 'event.dart';
 
