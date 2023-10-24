@@ -13,7 +13,7 @@ class EventDetailsScreen extends StatefulWidget {
 
 class _EventDetailsScreenState extends State<EventDetailsScreen> {
   List<EventTask> tasks = [];
-  bool receiveAlerts = true; // Variável para controlar os alertas
+  bool receiveAlerts = true;
 
   void _showAddTaskModal(BuildContext context) {
     String title = '';
@@ -153,8 +153,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       ),
                       IconButton(
                         icon: Icon(Icons.edit),
-                        onPressed: () {
-                        },
+                        onPressed: () {},
                       ),
                       IconButton(
                         icon: Icon(Icons.delete),
@@ -196,8 +195,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             ListTile(
               leading: Icon(Icons.settings),
               title: Text('Configurações'),
-              onTap: () {
-              },
+              onTap: () {},
             ),
           ],
         ),
