@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'event.dart';
 
 class AddEventScreen extends StatefulWidget {
@@ -28,6 +30,45 @@ class _AddEventScreenState extends State<AddEventScreen> {
       setState(() {
         _selectedDate = pickedDate;
       });
+    }
+  }
+
+  Future<void> _saveEvent() async {
+    final eventName = _nameController.text;
+    final eventDate = _selectedDate;
+
+    if (eventName.isNotEmpty) {
+      final newEvent = Event(
+        eventName,
+        eventDate,
+        _selectedEventType,
+        _isLargeEvent,
+      );
+
+      // Realizar a chamada HTTP para criar um novo evento
+      final response = await http.post(
+        Uri.parse('http://localhost:3000/api/event'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'name': newEvent.name,
+          'date': newEvent.date.toIso8601String(),
+          'eventType': newEvent.type,
+          'isLargeEvent': newEvent.isLargeEvent,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        // Se a criação for bem-sucedida, adicione o evento e retorne à tela anterior
+        widget.onAddEvent(newEvent);
+        Navigator.pop(context);
+      } else {
+        // Se houver um erro, exiba uma mensagem ao usuário
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Falha ao salvar o evento'),
+          ),
+        );
+      }
     }
   }
 
@@ -99,21 +140,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
                 ],
               ),
               ElevatedButton(
-                onPressed: () {
-                  final eventName = _nameController.text;
-                  final eventDate = _selectedDate;
-
-                  if (eventName.isNotEmpty) {
-                    final newEvent = Event(
-                      eventName,
-                      eventDate,
-                      _selectedEventType,
-                      _isLargeEvent,
-                    );
-                    widget.onAddEvent(newEvent);
-                    Navigator.pop(context);
-                  }
-                },
+                onPressed: _saveEvent,
                 child: Text('Salvar'),
               ),
             ],

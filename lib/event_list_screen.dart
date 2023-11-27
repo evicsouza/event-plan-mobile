@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'event.dart';
 import 'event_details_screen.dart';
 
@@ -13,6 +15,31 @@ class EventListScreen extends StatefulWidget {
 }
 
 class _EventListScreenState extends State<EventListScreen> {
+  Future<void> _loadEvents() async {
+    try {
+      final response = await http.get(Uri.parse('http://localhost:3000/api/event/all'));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> eventData = jsonDecode(response.body);
+
+        setState(() {
+          widget.events.clear();
+          widget.events.addAll(eventData.map((data) => Event.fromJson(data)).whereType<Event>());
+        });
+      } else {
+        print('Erro ao carregar eventos. Código de status: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('Erro ao carregar eventos: $error');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEvents();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,13 +51,11 @@ class _EventListScreenState extends State<EventListScreen> {
           children: <Widget>[
             ListTile(
               title: Text('Perfil'),
-              onTap: () {
-              },
+              onTap: () {},
             ),
             ListTile(
               title: Text('Configurações'),
-              onTap: () {
-              },
+              onTap: () {},
             ),
           ],
         ),
@@ -38,72 +63,78 @@ class _EventListScreenState extends State<EventListScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            ListView.builder(
-              shrinkWrap: true,
-              itemCount: widget.events.length,
-              itemBuilder: (ctx, index) {
-                final event = widget.events[index];
-                return Card(
-                  child: ListTile(
-                    title: Text(event.name),
-                    subtitle: Text(
-                      'Data: ${event.date.day}/${event.date.month}/${event.date.year}',
+            if (widget.events.isNotEmpty)
+              ListView.builder(
+                shrinkWrap: true,
+                itemCount: widget.events.length,
+                itemBuilder: (ctx, index) {
+                  final event = widget.events[index];
+                  return Card(
+                    child: ListTile(
+                      title: Text(event.name),
+                      subtitle: Text(
+                        'Data: ${event.date.day}/${event.date.month}/${event.date.year}',
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                EventDetailsScreen(event.name, event.date),
+                          ),
+                        );
+                      },
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.edit),
+                            onPressed: () {},
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.delete),
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: Text('Confirmar exclusão'),
+                                  content: Text('Deseja excluir este evento?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.of(ctx).pop();
+                                      },
+                                      child: Text('Cancelar'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        widget.events.remove(event);
+                                        Navigator.of(ctx).pop();
+                                      },
+                                      child: Text('Excluir'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              EventDetailsScreen(event.name, event.date),
-                        ),
-                      );
-                    },
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.edit),
-                          onPressed: () {
-                          },
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.delete),
-                          onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (ctx) => AlertDialog(
-                                title: Text('Confirmar exclusão'),
-                                content: Text('Deseja excluir este evento?'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(ctx).pop();
-                                    },
-                                    child: Text('Cancelar'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      widget.events.remove(event);
-                                      Navigator.of(ctx).pop();
-                                    },
-                                    child: Text('Excluir'),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/add_event');
-              },
-              child: Text('Adicionar Evento'),
+                  );
+                },
+              )
+            else
+              Center(
+                child: Text('Nenhum evento disponível.'),
+              ),
+            Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/add_event');
+                },
+                child: Text('Adicionar Evento'),
+              ),
             ),
           ],
         ),
