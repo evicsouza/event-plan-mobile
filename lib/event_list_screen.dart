@@ -8,7 +8,7 @@ import 'event_edit_screen.dart';
 class EventListScreen extends StatefulWidget {
   final List<Event> events;
   final Function(Event) onAddEvent;
-  final Function(Event) onEditEvent; // Adicionando a função de edição
+  final Function(Event) onEditEvent;
 
   EventListScreen(this.events, this.onAddEvent, this.onEditEvent);
 
@@ -19,17 +19,20 @@ class EventListScreen extends StatefulWidget {
 class _EventListScreenState extends State<EventListScreen> {
   Future<void> _loadEvents() async {
     try {
-      final response = await http.get(Uri.parse('http://localhost:3000/api/event/all'));
+      final response =
+          await http.get(Uri.parse('http://localhost:3000/api/event/all'));
 
       if (response.statusCode == 200) {
         final List<dynamic> eventData = jsonDecode(response.body);
 
         setState(() {
           widget.events.clear();
-          widget.events.addAll(eventData.map((data) => Event.fromJson(data)).whereType<Event>());
+          widget.events.addAll(
+              eventData.map((data) => Event.fromJson(data)).whereType<Event>());
         });
       } else {
-        print('Erro ao carregar eventos. Código de status: ${response.statusCode}');
+        print(
+            'Erro ao carregar eventos. Código de status: ${response.statusCode}');
       }
     } catch (error) {
       print('Erro ao carregar eventos: $error');
@@ -39,7 +42,8 @@ class _EventListScreenState extends State<EventListScreen> {
   Future<void> _editEvent(String? eventId) async {
     if (eventId != null) {
       try {
-        final response = await http.get(Uri.parse('http://localhost:3000/api/event/$eventId'));
+        final response =
+            await http.get(Uri.parse('http://localhost:3000/api/event/$eventId'));
 
         if (response.statusCode == 200) {
           final Map<String, dynamic> eventData = jsonDecode(response.body);
@@ -51,7 +55,6 @@ class _EventListScreenState extends State<EventListScreen> {
                 return EditEventScreen(
                   event: Event.fromJson(eventData),
                   onEditEvent: (editedEvent) async {
-                    // Aqui você pode adicionar a lógica para chamar o endpoint de edição
                     try {
                       final editResponse = await http.post(
                         Uri.parse('http://localhost:3000/api/event/edit/$eventId'),
@@ -65,26 +68,45 @@ class _EventListScreenState extends State<EventListScreen> {
 
                       if (editResponse.statusCode == 200) {
                         widget.onEditEvent(editedEvent);
-                        _loadEvents();
                       } else {
-                        print('Erro ao editar evento. Código de status: ${editResponse.statusCode}');
+                        print(
+                            'Erro ao editar evento. Código de status: ${editResponse.statusCode}');
                       }
                     } catch (error) {
                       print('Erro ao editar evento: $error');
                     }
+                    Navigator.pop(context);
                   },
                 );
               },
             ),
           );
         } else {
-          print('Erro ao obter detalhes do evento. Código de status: ${response.statusCode}');
+          print(
+              'Erro ao obter detalhes do evento. Código de status: ${response.statusCode}');
         }
       } catch (error) {
         print('Erro ao obter detalhes do evento: $error');
       }
     } else {
       print('ID do evento é nulo.');
+    }
+  }
+
+  Future<void> _deleteEvent(String? eventId) async {
+    try {
+      final deleteResponse = await http.delete(
+        Uri.parse('http://localhost:3000/api/event/delete/$eventId'),
+      );
+
+      if (deleteResponse.statusCode == 200) {
+        // Exclusão bem-sucedida, recarrega a lista de eventos
+        await _loadEvents();
+      } else {
+        print('Erro ao excluir evento. Código de status: ${deleteResponse.statusCode}');
+      }
+    } catch (error) {
+      print('Erro ao excluir evento: $error');
     }
   }
 
@@ -114,86 +136,76 @@ class _EventListScreenState extends State<EventListScreen> {
           ],
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            if (widget.events.isNotEmpty)
-              ListView.builder(
-                shrinkWrap: true,
-                itemCount: widget.events.length,
-                itemBuilder: (ctx, index) {
-                  final event = widget.events[index];
-                  return Card(
-                    child: ListTile(
-                      title: Text(event.name),
-                      subtitle: Text(
-                        'Data: ${event.date.day}/${event.date.month}/${event.date.year}',
-                      ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                EventDetailsScreen(event.name, event.date),
-                          ),
-                        );
-                      },
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: Icon(Icons.edit),
-                            onPressed: () {
-                              _editEvent(event.id);
-                            },
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.delete),
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (ctx) => AlertDialog(
-                                  title: Text('Confirmar exclusão'),
-                                  content: Text('Deseja excluir este evento?'),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.of(ctx).pop();
-                                      },
-                                      child: Text('Cancelar'),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        widget.events.remove(event);
-                                        Navigator.of(ctx).pop();
-                                      },
-                                      child: Text('Excluir'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
+      body: widget.events.isNotEmpty
+          ? ListView.builder(
+              itemCount: widget.events.length,
+              itemBuilder: (ctx, index) {
+                final event = widget.events[index];
+                return Card(
+                  child: ListTile(
+                    title: Text(event.name),
+                    subtitle: Text(
+                      'Data: ${event.date.day}/${event.date.month}/${event.date.year}',
                     ),
-                  );
-                },
-              )
-            else
-              Center(
-                child: Text('Nenhum evento disponível.'),
-              ),
-            Center(
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pushNamed(context, '/add_event');
-                },
-                child: Text('Adicionar Evento'),
-              ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              EventDetailsScreen(event.name, event.date),
+                        ),
+                      );
+                    },
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.edit),
+                          onPressed: () {
+                            _editEvent(event.id);
+                          },
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.delete),
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: Text('Confirmar exclusão'),
+                                content: Text('Deseja excluir este evento?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(ctx).pop();
+                                    },
+                                    child: Text('Cancelar'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      _deleteEvent(event.id);
+                                      Navigator.of(ctx).pop();
+                                    },
+                                    child: Text('Excluir'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            )
+          : Center(
+              child: Text('Nenhum evento disponível.'),
             ),
-          ],
-        ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.pushNamed(context, '/add_event');
+        },
+        child: Icon(Icons.add),
       ),
     );
   }

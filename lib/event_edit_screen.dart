@@ -60,8 +60,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: ListView(
           children: [
             TextField(
               controller: _nameController,
