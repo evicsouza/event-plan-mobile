@@ -13,7 +13,8 @@ class EventDetailsScreen extends StatefulWidget {
 
 class _EventDetailsScreenState extends State<EventDetailsScreen> {
   List<EventTask> tasks = [];
-  bool receiveAlerts = true; // Variável para controlar os alertas
+  bool receiveAlerts = true;
+  bool isCompleted = false;
 
   void _showAddTaskModal(BuildContext context) {
     String title = '';
@@ -68,12 +69,81 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   onPressed: () {
                     if (title.isNotEmpty) {
                       setState(() {
-                        tasks.add(EventTask(title, description, receiveAlerts));
+                        tasks.add(EventTask(title, description, isCompleted, receiveAlerts));
                       });
                       Navigator.pop(context);
                     }
                   },
                   child: Text('Adicionar Tarefa'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showEditTaskModal(BuildContext context, EventTask task) {
+    String editedTitle = task.title;
+    String editedDescription = task.description;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return SingleChildScrollView(
+          child: Container(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Editar Tarefa',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 16),
+                TextFormField(
+                  initialValue: task.title,
+                  decoration: InputDecoration(labelText: 'Título da Tarefa'),
+                  onChanged: (value) {
+                    editedTitle = value;
+                  },
+                ),
+                SizedBox(height: 16),
+                TextFormField(
+                  initialValue: task.description,
+                  decoration: InputDecoration(labelText: 'Descrição da Tarefa'),
+                  onChanged: (value) {
+                    editedDescription = value;
+                  },
+                ),
+                SizedBox(height: 16),
+                Row(
+                  children: [
+                    Text('Receber Alertas:'),
+                    Switch(
+                      value: task.receiveAlerts,
+                      onChanged: (value) {
+                        setState(() {
+                          task.receiveAlerts = value;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                      task.title = editedTitle;
+                      task.description = editedDescription;
+                    });
+                    Navigator.pop(context);
+                  },
+                  child: Text('Salvar Alterações'),
                 ),
               ],
             ),
@@ -154,6 +224,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                       IconButton(
                         icon: Icon(Icons.edit),
                         onPressed: () {
+                          _showEditTaskModal(context, task);
                         },
                       ),
                       IconButton(
@@ -196,8 +267,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
             ListTile(
               leading: Icon(Icons.settings),
               title: Text('Configurações'),
-              onTap: () {
-              },
+              onTap: () {},
             ),
           ],
         ),
