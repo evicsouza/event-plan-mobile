@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'event.dart';
 import 'event_details_screen.dart';
+import 'event_edit_screen.dart';
 
 class EventListScreen extends StatefulWidget {
   final List<Event> events;
@@ -31,6 +32,54 @@ class _EventListScreenState extends State<EventListScreen> {
       }
     } catch (error) {
       print('Erro ao carregar eventos: $error');
+    }
+  }
+
+  Future<void> _editEvent(String? eventId) async {
+    if (eventId != null) {
+      try {
+        final response = await http.get(Uri.parse('http://localhost:3000/api/event/edit/$eventId'));
+
+        if (response.statusCode == 200) {
+          final Map<String, dynamic> eventData = jsonDecode(response.body);
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => EditEventScreen(
+                event: Event.fromJson(eventData),
+                onEditEvent: (editedEvent) {
+                  _loadEvents();
+                },
+              ),
+            ),
+          );
+        } else {
+          print('Erro ao obter detalhes do evento. Código de status: ${response.statusCode}');
+        }
+      } catch (error) {
+        print('Erro ao obter detalhes do evento: $error');
+      }
+    } else {
+      print('ID do evento é nulo.');
+    }
+  }
+
+  Future<void> _deleteEvent(String? eventId) async {
+    if (eventId != null) {
+      try {
+        final response = await http.delete(Uri.parse('http://localhost:3000/api/event/delete/$eventId'));
+
+        if (response.statusCode == 200) {
+          _loadEvents();
+        } else {
+          print('Erro ao excluir o evento. Código de status: ${response.statusCode}');
+        }
+      } catch (error) {
+        print('Erro ao excluir o evento: $error');
+      }
+    } else {
+      print('ID do evento é nulo.');
     }
   }
 
@@ -89,7 +138,9 @@ class _EventListScreenState extends State<EventListScreen> {
                         children: [
                           IconButton(
                             icon: Icon(Icons.edit),
-                            onPressed: () {},
+                            onPressed: () {
+                              _editEvent(event.id ?? ''); // Passa uma string vazia se o ID for nulo
+                            },
                           ),
                           IconButton(
                             icon: Icon(Icons.delete),
@@ -108,7 +159,7 @@ class _EventListScreenState extends State<EventListScreen> {
                                     ),
                                     TextButton(
                                       onPressed: () {
-                                        widget.events.remove(event);
+                                        _deleteEvent(event.id ?? ''); // Passa uma string vazia se o ID for nulo
                                         Navigator.of(ctx).pop();
                                       },
                                       child: Text('Excluir'),

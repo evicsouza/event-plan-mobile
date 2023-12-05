@@ -39,6 +39,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
 
     if (eventName.isNotEmpty) {
       final newEvent = Event(
+        null,
         eventName,
         eventDate,
         _selectedEventType,
