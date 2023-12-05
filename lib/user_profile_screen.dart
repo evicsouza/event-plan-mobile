@@ -14,6 +14,7 @@ class EventDetailsScreen extends StatefulWidget {
 class _EventDetailsScreenState extends State<EventDetailsScreen> {
   List<EventTask> tasks = [];
   bool receiveAlerts = true;
+  bool isCompleted = false;
 
   void _showAddTaskModal(BuildContext context) {
     String title = '';
@@ -68,7 +69,7 @@ class _EventDetailsScreenState extends State<EventDetailsScreen> {
                   onPressed: () {
                     if (title.isNotEmpty) {
                       setState(() {
-                        tasks.add(EventTask(title, description, receiveAlerts));
+                        tasks.add(EventTask(title, description, isCompleted, receiveAlerts));
                       });
                       Navigator.pop(context);
                     }
