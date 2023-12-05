@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'event.dart'; // Certifique-se de importar a classe de Event correta
+import 'package:http/http.dart' as http;
+import 'event.dart';
 
 class EditEventScreen extends StatefulWidget {
-  final Event event; // Passamos o evento para edição
+  final Event event;
   final Function(Event) onEditEvent;
 
   EditEventScreen({required this.event, required this.onEditEvent});
@@ -21,11 +22,34 @@ class _EditEventScreenState extends State<EditEventScreen> {
   void initState() {
     super.initState();
 
-    // Inicializamos os controladores de texto com os dados existentes do evento
     _nameController = TextEditingController(text: widget.event.name);
     _dateController = TextEditingController(text: widget.event.date.toString());
     _typeController = TextEditingController(text: widget.event.type);
-    _isLargeEventController = TextEditingController(text: widget.event.isLargeEvent.toString());
+    _isLargeEventController =
+        TextEditingController(text: widget.event.isLargeEvent.toString());
+  }
+
+  Future<void> _editEventOnServer(Event editedEvent) async {
+    try {
+      final response = await http.post(
+        Uri.parse('http://localhost:3000/api/event/edit/${editedEvent.id}'),
+        body: {
+          'name': editedEvent.name,
+          'date': editedEvent.date.toIso8601String(),
+          'type': editedEvent.type,
+          'isLargeEvent': editedEvent.isLargeEvent.toString(),
+        },
+      );
+
+      if (response.statusCode == 200) {
+        widget.onEditEvent(editedEvent);
+        Navigator.pop(context);
+      } else {
+        print('Erro ao editar evento. Código de status: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('Erro ao editar evento: $error');
+    }
   }
 
   @override
@@ -56,12 +80,12 @@ class _EditEventScreenState extends State<EditEventScreen> {
             SizedBox(height: 20),
             TextField(
               controller: _isLargeEventController,
-              decoration: InputDecoration(labelText: 'Evento com mais de 100 convidados? (true/false)'),
+              decoration: InputDecoration(
+                  labelText: 'Evento com mais de 100 convidados? (true/false)'),
             ),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
-                // Aqui você pode adicionar a lógica para salvar as alterações
                 Event editedEvent = Event(
                   widget.event.id,
                   _nameController.text,
@@ -70,11 +94,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
                   _isLargeEventController.text.toLowerCase() == 'true',
                 );
 
-                // Chamamos a função de callback para atualizar a lista
-                widget.onEditEvent(editedEvent);
-
-                // Voltamos para a tela anterior
-                Navigator.pop(context);
+                _editEventOnServer(editedEvent);
               },
               child: Text('Salvar'),
             ),
@@ -86,7 +106,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
 
   @override
   void dispose() {
-    // Certificamos de liberar os controladores quando a tela é destruída
     _nameController.dispose();
     _dateController.dispose();
     _typeController.dispose();

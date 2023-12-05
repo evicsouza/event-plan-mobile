@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:event_plan/event_edit_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'event_list_screen.dart';
@@ -25,7 +26,8 @@ class _MyAppState extends State<MyApp> {
 
   Future<void> _fetchEvents() async {
     try {
-      final response = await http.get(Uri.parse('http://localhost:3000/api/event/all'));
+      final response =
+          await http.get(Uri.parse('http://localhost:3000/api/event/all'));
 
       if (response.statusCode == 200) {
         final List<dynamic> eventData = jsonDecode(response.body);
@@ -33,7 +35,8 @@ class _MyAppState extends State<MyApp> {
           events = eventData.map((data) => Event.fromJson(data)).toList();
         });
       } else {
-        print('Erro ao obter eventos. Código de status: ${response.statusCode}');
+        print(
+            'Erro ao obter eventos. Código de status: ${response.statusCode}');
       }
     } catch (e) {
       print('Erro na solicitação: $e');
@@ -45,7 +48,8 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       initialRoute: '/event_list',
       routes: {
-        '/event_list': (context) => EventListScreen(events, _addEvent),
+        '/event_list': (context) =>
+            EventListScreen(events, _addEvent, _editEvent),
         '/add_event': (context) => AddEventScreen(_addEvent),
       },
       home: Scaffold(
@@ -73,7 +77,7 @@ class _MyAppState extends State<MyApp> {
             ],
           ),
         ),
-        body: EventListScreen(events, _addEvent),
+        body: EventListScreen(events, _addEvent, _editEvent),
       ),
     );
   }
@@ -82,5 +86,10 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       events.add(event);
     });
+  }
+
+  void _editEvent(Event event) {
+    // Adicione a lógica para abrir a tela de edição com o ID do evento
+    Navigator.of(context).pushNamed('/event/edit', arguments: event);
   }
 }

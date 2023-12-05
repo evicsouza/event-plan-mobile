@@ -8,8 +8,9 @@ import 'event_edit_screen.dart';
 class EventListScreen extends StatefulWidget {
   final List<Event> events;
   final Function(Event) onAddEvent;
+  final Function(Event) onEditEvent; // Adicionando a função de edição
 
-  EventListScreen(this.events, this.onAddEvent);
+  EventListScreen(this.events, this.onAddEvent, this.onEditEvent);
 
   @override
   _EventListScreenState createState() => _EventListScreenState();
@@ -38,7 +39,7 @@ class _EventListScreenState extends State<EventListScreen> {
   Future<void> _editEvent(String? eventId) async {
     if (eventId != null) {
       try {
-        final response = await http.get(Uri.parse('http://localhost:3000/api/event/edit/$eventId'));
+        final response = await http.get(Uri.parse('http://localhost:3000/api/event/$eventId'));
 
         if (response.statusCode == 200) {
           final Map<String, dynamic> eventData = jsonDecode(response.body);
@@ -46,12 +47,34 @@ class _EventListScreenState extends State<EventListScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => EditEventScreen(
-                event: Event.fromJson(eventData),
-                onEditEvent: (editedEvent) {
-                  _loadEvents();
-                },
-              ),
+              builder: (BuildContext context) {
+                return EditEventScreen(
+                  event: Event.fromJson(eventData),
+                  onEditEvent: (editedEvent) async {
+                    // Aqui você pode adicionar a lógica para chamar o endpoint de edição
+                    try {
+                      final editResponse = await http.post(
+                        Uri.parse('http://localhost:3000/api/event/edit/$eventId'),
+                        body: {
+                          'name': editedEvent.name,
+                          'date': editedEvent.date.toIso8601String(),
+                          'type': editedEvent.type,
+                          'isLargeEvent': editedEvent.isLargeEvent.toString(),
+                        },
+                      );
+
+                      if (editResponse.statusCode == 200) {
+                        widget.onEditEvent(editedEvent);
+                        _loadEvents();
+                      } else {
+                        print('Erro ao editar evento. Código de status: ${editResponse.statusCode}');
+                      }
+                    } catch (error) {
+                      print('Erro ao editar evento: $error');
+                    }
+                  },
+                );
+              },
             ),
           );
         } else {
@@ -59,24 +82,6 @@ class _EventListScreenState extends State<EventListScreen> {
         }
       } catch (error) {
         print('Erro ao obter detalhes do evento: $error');
-      }
-    } else {
-      print('ID do evento é nulo.');
-    }
-  }
-
-  Future<void> _deleteEvent(String? eventId) async {
-    if (eventId != null) {
-      try {
-        final response = await http.delete(Uri.parse('http://localhost:3000/api/event/delete/$eventId'));
-
-        if (response.statusCode == 200) {
-          _loadEvents();
-        } else {
-          print('Erro ao excluir o evento. Código de status: ${response.statusCode}');
-        }
-      } catch (error) {
-        print('Erro ao excluir o evento: $error');
       }
     } else {
       print('ID do evento é nulo.');
@@ -139,7 +144,7 @@ class _EventListScreenState extends State<EventListScreen> {
                           IconButton(
                             icon: Icon(Icons.edit),
                             onPressed: () {
-                              _editEvent(event.id ?? ''); // Passa uma string vazia se o ID for nulo
+                              _editEvent(event.id);
                             },
                           ),
                           IconButton(
@@ -159,7 +164,7 @@ class _EventListScreenState extends State<EventListScreen> {
                                     ),
                                     TextButton(
                                       onPressed: () {
-                                        _deleteEvent(event.id ?? ''); // Passa uma string vazia se o ID for nulo
+                                        widget.events.remove(event);
                                         Navigator.of(ctx).pop();
                                       },
                                       child: Text('Excluir'),
